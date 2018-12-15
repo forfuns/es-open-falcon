@@ -30,7 +30,8 @@ class EsMetrics(threading.Thread):
             'docs': ['count', 'deleted'],
             'store': ['size_in_bytes', 'throttle_time_in_millis'],
 	        'refresh': ['total','total_time_in_millis'],
-	        'flush': ['total','total_time_in_millis']
+	        'flush': ['total','total_time_in_millis'],
+            'jvm.mem': ['heap_used_percent']
         }
         self.cluster_metrics = ['status', 'number_of_nodes', 'number_of_data_nodes', 'active_primary_shards', 'active_shards', 'unassigned_shards']
         self.counter_keywords = ['query_total', 'query_time_in_millis',
