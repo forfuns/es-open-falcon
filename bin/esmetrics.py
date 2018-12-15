@@ -28,12 +28,14 @@ class EsMetrics(threading.Thread):
             'search': ['query_total', 'query_time_in_millis', 'query_current', 'fetch_total', 'fetch_time_in_millis', 'fetch_current'],
             'indexing': ['index_total', 'index_current', 'index_time_in_millis', 'delete_total', 'delete_current', 'delete_time_in_millis'],
             'docs': ['count', 'deleted'],
-            'store': ['size_in_bytes', 'throttle_time_in_millis']
+            'store': ['size_in_bytes', 'throttle_time_in_millis'],
+	        'refresh': ['total','total_time_in_millis'],
+	        'flush': ['total','total_time_in_millis']
         }
         self.cluster_metrics = ['status', 'number_of_nodes', 'number_of_data_nodes', 'active_primary_shards', 'active_shards', 'unassigned_shards']
         self.counter_keywords = ['query_total', 'query_time_in_millis',
             'fetch_total', 'fetch_time_in_millis',
-            'index_total', 'index_time_in_millis', 
+            'index_total', 'index_time_in_millis',
             'delete_total', 'delete_time_in_millis']
         super(EsMetrics, self).__init__(None, name=self.es_conf['endpoint'])
         self.setDaemon(False)
@@ -51,14 +53,17 @@ class EsMetrics(threading.Thread):
                 index_stats = nodes_stats['nodes'][node]['indices']
                 for type in self.index_metrics:
                     for keyword in self.index_metrics[type]:
-                        if keyword not in keyword_metric:
-                            keyword_metric[keyword] = 0
-                        keyword_metric[keyword] += index_stats[type][keyword]
+                        full_metric_name = '%s.%s'%(type,keyword)
+                        if full_metric_name not in keyword_metric:
+                            keyword_metric[full_metric_name] = 0
+                        keyword_metric[full_metric_name] += index_stats[type][keyword]
+			print '%s : %s'%(full_metric_name,keyword_metric[full_metric_name])
             for keyword in self.cluster_metrics:
+                full_metric_name = '%s.%s'%('health',keyword)
                 if keyword == 'status':
-                    keyword_metric[keyword] = self.status_map[cluster_health[keyword]]
+                    keyword_metric[full_metric_name] = self.status_map[cluster_health[keyword]]
                 else:
-                    keyword_metric[keyword] = cluster_health[keyword]
+                    keyword_metric[full_metric_name] = cluster_health[keyword]
             for keyword in keyword_metric:
                 falcon_metric = {
                     'counterType': 'COUNTER' if keyword in self.counter_keywords else 'GAUGE',
