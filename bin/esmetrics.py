@@ -16,6 +16,10 @@ def matchNode(properties,node):
     while(i<propsSize):
 
         if(dict and type(node) is dict and props[i] ):
+
+            if props[i] not in node:
+                return None
+
             node = node[props[i]]
         else:
             return None
@@ -105,7 +109,15 @@ class EsMetrics(threading.Thread):
             }
         }
 
+        indice_metrics_key_map = {
+            'primaries' : {
+                'store':['size_in_bytes','throttle_time_in_millis']
+            }
+
+        }
+
         self.node_properties = convertProperties('',node_metrics_key_map)
+        self.indice_properties = convertProperties('',indice_metrics_key_map)
         # self.index_metrics = {
         #     'search': ['query_total', 'query_time_in_millis', 'query_current', 'fetch_total', 'fetch_time_in_millis', 'fetch_current'],
         #     'indexing': ['index_total', 'index_current', 'index_time_in_millis', 'delete_total', 'delete_current', 'delete_time_in_millis'],
@@ -129,16 +141,57 @@ class EsMetrics(threading.Thread):
             falcon_metrics = []
             # Statistics
             timestamp = int(time.time())
+
             nodes_stats = self.es.nodes.stats()
+            indices_stats = self.es.indices.stats()
+
             cluster_health = self.es.cluster.health()
             keyword_metric = {}
+
+            # for indices status
+            for indice in indices_stats['indices']:
+
+                for propertie in self.indice_properties:
+
+                    indice_property = 'indice[%s].%s'%(indice,propertie)
+                    all_indice_property = 'indice[%s].%s'%('all',propertie)
+
+                    if indice_property not in keyword_metric:
+                        keyword_metric[indice_property] = 0
+
+                    if all_indice_property not in keyword_metric:
+                        keyword_metric[all_indice_property] = 0
+
+                    print propertie
+
+                    value = matchNode(propertie,indices_stats['indices'][indice])
+                    if(value == None):
+                        value = 0
+
+                    keyword_metric[indice_property] = value
+                    keyword_metric[all_indice_property] = keyword_metric[all_indice_property] + value
+
+            # for nodes status
             for node in nodes_stats['nodes']:
                 index_stats = nodes_stats['nodes'][node]['indices']
 
                 for propertie in self.node_properties:
-                    keyword_metric[propertie] = matchNode(propertie,nodes_stats['nodes'][node])
-                    if(keyword_metric[propertie]==None):
-                        keyword_metric[propertie] = 0
+
+                    node_property = 'node[%s].%s'%(node,propertie)
+                    all_node_property = 'node[%s].%s'%('all',propertie)
+
+                    if node_property not in keyword_metric:
+                        keyword_metric[node_property] = 0
+
+                    if all_node_property not in keyword_metric:
+                        keyword_metric[all_node_property] = 0
+
+                    value = matchNode(propertie,nodes_stats['nodes'][node])
+                    if(value == None):
+                        value = 0
+
+                    keyword_metric[node_property] = value
+                    keyword_metric[all_node_property] = keyword_metric[all_node_property] + value
 
             #     for type in self.index_metrics:
             #         for keyword in self.index_metrics[type]:
@@ -153,7 +206,10 @@ class EsMetrics(threading.Thread):
                     keyword_metric[full_metric_name] = self.status_map[cluster_health[keyword]]
                 else:
                     keyword_metric[full_metric_name] = cluster_health[keyword]
+
             for keyword in keyword_metric:
+
+                # print '%s : %s'%(keyword,keyword_metric[keyword])
 
                 falcon_metric = {
                     'counterType': 'COUNTER' if keyword in self.counter_keywords else 'GAUGE',
@@ -164,8 +220,12 @@ class EsMetrics(threading.Thread):
                     'tags': 'n=' + nodes_stats['cluster_name'],
                     'value': keyword_metric[keyword]
                 }
-                # print 'falcon_metric : ',falcon_metric
+
                 falcon_metrics.append(falcon_metric)
+
+            # print 'falcon_metric : '
+            # print json.dumps(falcon_metrics)
+
             if self.falcon_conf['test_run']:
                 print json.dumps(falcon_metrics)
             else:
