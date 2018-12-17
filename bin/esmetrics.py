@@ -157,16 +157,14 @@ class EsMetrics(threading.Thread):
 
                 for propertie in self.indice_properties:
 
-                    indice_property = 'indice[%s].%s'%(indice,propertie)
-                    all_indice_property = 'indice[%s].%s'%('all',propertie)
+                    indice_property = 'indice=%s|%s'%(indice,propertie)
+                    all_indice_property = 'indice=%s|%s'%('all',propertie)
 
                     if indice_property not in keyword_metric:
                         keyword_metric[indice_property] = 0
 
                     if all_indice_property not in keyword_metric:
                         keyword_metric[all_indice_property] = 0
-
-                    print propertie
 
                     value = matchNode(propertie,indices_stats['indices'][indice])
                     if(value == None):
@@ -181,8 +179,8 @@ class EsMetrics(threading.Thread):
 
                 for propertie in self.node_properties:
 
-                    node_property = 'node[%s].%s'%(node,propertie)
-                    all_node_property = 'node[%s].%s'%('all',propertie)
+                    node_property = 'node=%s|%s'%(node,propertie)
+                    all_node_property = 'node=%s|%s'%('all',propertie)
 
                     if node_property not in keyword_metric:
                         keyword_metric[node_property] = 0
@@ -211,8 +209,18 @@ class EsMetrics(threading.Thread):
                 else:
                     keyword_metric[full_metric_name] = cluster_health[keyword]
 
-            for keyword in keyword_metric:
+            for keyword_expr in keyword_metric:
 
+                keyword_tuples = keyword_expr.split('|')
+
+                if(len(keyword_tuples) == 2):
+                    (tag,keyword) = keyword_tuples
+                    tag = ','+tag
+                else:
+                    tag = ''
+                    keyword = keyword_expr
+
+                # print tag,keyword
                 # print '%s : %s'%(keyword,keyword_metric[keyword])
 
                 falcon_metric = {
@@ -221,8 +229,8 @@ class EsMetrics(threading.Thread):
                     'endpoint': self.es_conf['endpoint'],
                     'timestamp': timestamp,
                     'step': self.falcon_conf['step'],
-                    'tags': 'n=' + nodes_stats['cluster_name'],
-                    'value': keyword_metric[keyword]
+                    'tags': 'n='+nodes_stats['cluster_name']+tag,
+                    'value': keyword_metric[keyword_expr]
                 }
 
                 falcon_metrics.append(falcon_metric)
