@@ -131,12 +131,11 @@ class EsMetrics(threading.Thread):
 	    #     'flush': ['total','total_time_in_millis'],
         #     'jvm.mem': ['heap_used_percent']
         # }
-        self.cluster_metrics = ['status', 'number_of_nodes', 'number_of_data_nodes', 'active_primary_shards', 'active_shards', 'unassigned_shards']
+        self.cluster_metrics = ['status', 'number_of_nodes', 'number_of_data_nodes', 'active_primary_shards', 'active_shards','initializing_shards', 'unassigned_shards']
         self.counter_keywords = ['query_total', 'query_time_in_millis',
             'fetch_total', 'fetch_time_in_millis',
             'index_total', 'index_time_in_millis',
-            'delete_total', 'delete_time_in_millis',
-            'initializing_shards','unassigned_shards']
+            'delete_total', 'delete_time_in_millis']
         super(EsMetrics, self).__init__(None, name=self.es_conf['endpoint'])
         self.setDaemon(False)
 
