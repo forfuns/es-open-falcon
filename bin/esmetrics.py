@@ -135,7 +135,8 @@ class EsMetrics(threading.Thread):
         self.counter_keywords = ['query_total', 'query_time_in_millis',
             'fetch_total', 'fetch_time_in_millis',
             'index_total', 'index_time_in_millis',
-            'delete_total', 'delete_time_in_millis']
+            'delete_total', 'delete_time_in_millis',
+            'initializing_shards','unassigned_shards']
         super(EsMetrics, self).__init__(None, name=self.es_conf['endpoint'])
         self.setDaemon(False)
 
