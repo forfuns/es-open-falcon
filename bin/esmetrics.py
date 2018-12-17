@@ -102,11 +102,15 @@ class EsMetrics(threading.Thread):
                 'store': ['size_in_bytes', 'throttle_time_in_millis'],
     	        'refresh': ['total','total_time_in_millis'],
     	        'flush': ['total','total_time_in_millis'],
+                'fielddata':['memory_size_in_bytes','evictions']
             },
             'jvm':{
-                'gc.collectors.young':['.collection_count','collection_time_in_millis'],
+                'gc.collectors.young':['collection_count','collection_time_in_millis'],
+                'gc.collectors.old':['collection_count','collection_time_in_millis'],
                 'mem':['heap_used_percent','heap_committed_in_bytes']
-            }
+            },
+            'http':['current_open','total_opened'],
+            'thread_pool':['bulk.queue','index.queue','search.queue','merge.queue','bulk.rejected','index.rejected','search.rejected','merge.rejected']
         }
 
         indice_metrics_key_map = {
@@ -173,7 +177,7 @@ class EsMetrics(threading.Thread):
 
             # for nodes status
             for node in nodes_stats['nodes']:
-                index_stats = nodes_stats['nodes'][node]['indices']
+                # index_stats = nodes_stats['nodes'][node]['indices']
 
                 for propertie in self.node_properties:
 
