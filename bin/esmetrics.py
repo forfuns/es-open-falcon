@@ -115,7 +115,10 @@ class EsMetrics(threading.Thread):
 
         indice_metrics_key_map = {
             'primaries' : {
-                'store':['size_in_bytes','throttle_time_in_millis']
+                'store':['size_in_bytes','throttle_time_in_millis'],
+                'indexing' : ['index_total','index_time_in_millis','index_current','index_failed',
+                            'delete_total','delete_time_in_millis','delete_current','noop_update_total',
+                            'throttle_time_in_millis']
             }
 
         }
